@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>中・韓・台 貨定價系統（手機穩定版）</title>
+  <style>
+    :root{
+      --bg:#ffffff;
+      --fg:#111;
+      --muted:#666;
+      --line:#e8e8e8;
+      --card:#fff;
+      --soft:#f7f7f7;
+      --accent:#111;
+      --accent2:#6b5cff;
+      --warn:#d12c2c;
+      --ok:#0b7a2a;
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family: system-ui, -apple-system, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      line-height:1.45;
+    }
+    .wrap{max-width:980px;margin:0 auto;padding:18px}
+    h1{margin:0 0 10px;font-size:26px;letter-spacing:.5px}
+    .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+    .tabs{
+      display:flex;gap:10px;flex-wrap:nowrap;overflow:auto;
+      padding:8px 0 14px;margin:0 0 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tabbtn{
+      flex:0 0 auto;
+      border:1px solid #cfcfcf;background:#fff;color:#111;
+      padding:10px 16px;border-radius:999px;
+      font-size:15px;cursor:pointer;
+      min-width:120px;
+    }
+    .tabbtn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .grid{display:grid;grid-template-columns:1fr;gap:14px}
+    @media (min-width: 980px){
+      .grid{grid-template-columns:1fr 1fr}
+    }
+    .card{
+      border:1px solid var(--line);
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:16px;
+    }
+    .card h2{margin:0 0 12px;font-size:18px}
+    .row{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:8px;
+      margin:10px 0;
+    }
+    @media (min-width: 520px){
+      .row{grid-template-columns:1fr 170px;align-items:center}
+    }
+    label{font-size:14px}
+    input,select{
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid #cfd6e4;
+      font-size:16px;
+      outline:none;
+      background:#fff;
+    }
+    input:focus{border-color:#9aa7c1}
+    .hint{font-size:12px;color:var(--muted);margin-top:6px}
+    .box{
+      border:2px solid #111;
+      border-radius:18px;
+      padding:14px;
+      margin:10px 0 14px;
+      background:#fff;
+    }
+    .box.soft{border:1px dashed #cfcfcf;background:var(--soft)}
+    .box.compare{border:2px dashed var(--accent2);background:#faf8ff}
+    .tag{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#111;margin-bottom:8px}
+    .dot{width:10px;height:10px;border-radius:50%}
+    .dot.blue{background:#2f60ff}
+    .dot.orange{background:#ff8a00}
+    .dot.purple{background:var(--accent2)}
+    .big{
+      font-size:44px;
+      font-weight:900;
+      margin:4px 0 6px;
+      letter-spacing: .5px;
+    }
+    .big small{font-size:18px;font-weight:700}
+    .muted{font-size:12px;color:var(--muted)}
+    .kpi{
+      display:flex;flex-wrap:wrap;gap:10px;
+      margin-top:8px
+    }
+    .pill{
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:13px;
+      background:#fff;
+    }
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{padding:10px 8px;border-bottom:1px solid #ececec;text-align:right;font-size:14px}
+    th:first-child,td:first-child{text-align:left}
+    .ok{color:var(--ok);font-weight:800}
+    .bad{color:var(--warn);font-weight:800}
+    .secTitle{font-weight:800;margin:0 0 8px}
+    .hidden{display:none !important}
+    .warnline{color:var(--warn);font-weight:800;font-size:13px;margin-top:6px}
+    .foot{color:var(--muted);font-size:12px;margin-top:10px}
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+  <h1>中・韓・台 貨定價系統（輸入即時計算）</h1>
+  <div class="sub">
+    固定模式：母價（貼文/商品頁售價）→ 內部價：V1=母價×折扣、V2=母價×折扣（折一次）<br>
+    主控邏輯：V2 成交價 ≥ 目標底線 才算「不踩線」。零售開票會影響零售利潤（母價/(1+發票稅)−成本）。<br>
+    中國貨：含 巧巧郎 1% 代訂手續費（可扣抵）；另提供「舊制母價/利潤」參考（利潤固定 10%）。
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tabbtn active" type="button" data-tab="kr">kr 韓國貨</button>
+    <button class="tabbtn" type="button" data-tab="cn">cn 中國貨</button>
+    <button class="tabbtn" type="button" data-tab="tw">tw 台灣貨</button>
+  </div>
+
+  <!-- ================= KR ================= -->
+  <section id="tab-kr" class="grid">
+    <div class="card">
+      <h2>輸入（韓貨 KRW）</h2>
+
+      <div class="row"><label>商品單價（KRW）</label><input id="k_p" type="number" value="10000" inputmode="numeric"></div>
+      <div class="row"><label>件數</label><input id="k_q" type="number" value="1" inputmode="numeric"></div>
+      <div class="row"><label>貨運大哥抽成（%）</label><input id="k_fee" type="number" value="5" inputmode="decimal"></div>
+      <div class="row"><label>單件重量（kg）</label><input id="k_w" type="number" value="0.5" step="0.01" inputmode="decimal"></div>
+      <div class="row"><label>韓國運費（KRW/kg）</label><input id="k_ship" type="number" value="4300" inputmode="numeric"></div>
+      <div class="row"><label>匯率（KRW/TWD）</label><input id="k_fx" type="number" value="45" step="0.001" inputmode="decimal"></div>
+      <div class="row"><label>東風（TWD/kg）</label><input id="k_df" type="number" value="35" inputmode="numeric"></div>
+
+      <div class="row"><label>目標利潤率（%）</label><input id="k_profit" type="number" value="12" inputmode="decimal"></div>
+      <div class="row"><label>零售發票稅（%）</label><input id="k_vat" type="number" value="5" inputmode="decimal"></div>
+      <div class="row"><label>V1 折扣</label><input id="k_v1" type="number" value="0.95" step="0.01" inputmode="decimal"></div>
+      <div class="row"><label>V2 折扣</label><input id="k_v2" type="number" value="0.93" step="0.01" inputmode="decimal"></div>
+
+      <div class="box soft">
+        <div class="secTitle">（選填）手動母價（貼文售價 / TWD）</div>
+        <div class="row"><label>手動母價（TWD）</label><input id="k_manual" type="number" placeholder="留空=系統母價" inputmode="numeric"></div>
+        <div class="hint">取9參考：向上取到10的倍數後減1（例：345 → 349）。</div>
+      </div>
+
+      <div class="box soft">
+        <div class="secTitle">成本摘要（單件）</div>
+        <table>
+          <tr><td>單件成本（TWD）</td><td id="k_unitCost">-</td></tr>
+          <tr><td>目標 V2 底線成交價（=成本×(1+利潤)）</td><td id="k_floorDeal">-</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>結果（韓貨）</h2>
+
+      <div class="box">
+        <div class="tag"><span class="dot blue"></span><b>A 區｜對外母價（貼文/商品頁）</b></div>
+        <div class="big">NT$ <span id="k_mom">-</span> <small>唯一公開價</small></div>
+        <div class="muted">系統母價（V2 不踩線最低母價）：NT$ <span id="k_mom_min">-</span> ／ 取9參考：NT$ <span id="k_take9">-</span></div>
+        <div id="k_warn" class="warnline hidden">⚠️ 你輸入的手動母價低於 V2 不踩線最低母價，會顯示踩線。</div>
+      </div>
+
+      <div class="box soft">
+        <div class="tag"><span class="dot orange"></span><b>B 區｜內部價（不對外）</b></div>
+        <table>
+          <thead>
+            <tr>
+              <th>通路</th>
+              <th>成交價</th>
+              <th>單件利潤</th>
+              <th>是否踩線（以 V2 底線判斷）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>V2（底線，不對外）</td><td id="k_v2_p">-</td><td id="k_v2_m">-</td><td id="k_v2_ok">-</td></tr>
+            <tr><td>V1（熟客）</td><td id="k_v1_p">-</td><td id="k_v1_m">-</td><td id="k_v1_ok">-</td></tr>
+            <tr><td>零售（開票，參考）</td><td id="k_r_p">-</td><td id="k_r_m">-</td><td>-</td></tr>
+          </tbody>
+        </table>
+        <div class="foot">零售利潤＝母價/(1+發票稅)−成本；V1/V2 不開票利潤＝成交價−成本。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CN ================= -->
+  <section id="tab-cn" class="grid hidden">
+    <div class="card">
+      <h2>輸入（中國貨 RMB）</h2>
+
+      <div class="row"><label>商品單價（RMB）</label><input id="c_p" type="number" value="71" inputmode="decimal"></div>
+      <div class="row"><label>件數</label><input id="c_q" type="number" value="5" inputmode="numeric"></div>
+      <div class="row"><label>境內運費（RMB）</label><input id="c_dom" type="number" value="10" inputmode="decimal"></div>
+      <div class="row"><label>匯率（RMB/TWD）</label><input id="c_fx" type="number" value="4.538" step="0.001" inputmode="decimal"></div>
+
+      <div class="row"><label>巧巧郎代訂手續費（%）</label><input id="c_fee" type="number" value="1" inputmode="decimal"></div>
+
+      <div class="row"><label>國際運費（TWD/kg）</label><input id="c_ship" type="number" value="43" inputmode="decimal"></div>
+      <div class="row"><label>總重量（kg）</label><input id="c_w" type="number" value="2" step="0.01" inputmode="decimal"></div>
+      <div class="row"><label>關稅（%）</label><input id="c_duty" type="number" value="12" inputmode="decimal"></div>
+
+      <div class="row"><label>目標利潤率（%）</label><input id="c_profit" type="number" value="12" inputmode="decimal"></div>
+      <div class="row"><label>零售發票稅（%）</label><input id="c_vat" type="number" value="5" inputmode="decimal"></div>
+      <div class="row"><label>V1 折扣</label><input id="c_v1" type="number" value="0.95" step="0.01" inputmode="decimal"></div>
+      <div class="row"><label>V2 折扣</label><input id="c_v2" type="number" value="0.93" step="0.01" inputmode="decimal"></div>
+
+      <div class="box soft">
+        <div class="secTitle">（選填）手動母價（貼文售價 / TWD）</div>
+        <div class="row"><label>手動母價（TWD）</label><input id="c_manual" type="number" placeholder="留空=系統母價" inputmode="numeric"></div>
+        <div class="hint">留空＝系統自動算出「V2 不踩線」的最低母價；你也可手動調高，若調低會顯示踩線。</div>
+        <div class="hint">取9參考：向上取到10的倍數後減1（例：345 → 349）。</div>
+      </div>
+
+      <!-- 成本摘要移到左下 -->
+      <div class="box soft">
+        <div class="secTitle">成本摘要（單件）</div>
+        <table>
+          <tr><td>RMB→TWD（商品+境內運）</td><td id="c_sum_base">-</td></tr>
+          <tr><td>巧巧郎手續費（TWD）</td><td id="c_sum_fee">-</td></tr>
+          <tr><td>國際運費（TWD）</td><td id="c_sum_ship">-</td></tr>
+          <tr><td>關稅後整批成本（TWD）</td><td id="c_sum_total">-</td></tr>
+          <tr><td><b>單件成本（TWD）</b></td><td id="c_unitCost">-</td></tr>
+          <tr><td>目標 V2 底線成交價（=成本×(1+利潤)）</td><td id="c_floorDeal">-</td></tr>
+        </table>
+      </div>
+
+      <!-- 舊制參數 -->
+      <div class="box compare">
+        <div class="secTitle">舊制參數（僅供比較）</div>
+        <div class="hint">舊制利潤率固定 10%（不吃上面的目標利潤率）。</div>
+
+        <div class="row"><label>舊制國際運單價（RMB/kg）</label><input id="c_old_ship_rmb" type="number" value="20" step="0.01" inputmode="decimal"></div>
+        <div class="row"><label>舊制匯率（固定預設 5）</label><input id="c_old_fx" type="number" value="5" step="0.01" inputmode="decimal"></div>
+
+        <div class="hint">
+          舊制單件成本＝((商品單價×件數)+境內運+(舊制國際運單價×總重量))×舊制匯率 ÷ 件數<br>
+          舊制母價(售價)＝舊制成本×(1+10%)
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>結果（中國貨）</h2>
+
+      <div class="box">
+        <div class="tag"><span class="dot blue"></span><b>A 區｜對外母價（貼文/商品頁）</b></div>
+        <div class="big">NT$ <span id="c_mom">-</span> <small>唯一公開價</small></div>
+        <div class="muted">系統母價（V2 不踩線最低母價）：NT$ <span id="c_mom_min">-</span> ／ 取9參考：NT$ <span id="c_take9">-</span></div>
+        <div id="c_warn" class="warnline hidden">⚠️ 你輸入的手動母價低於 V2 不踩線最低母價，會顯示踩線。</div>
+      </div>
+
+      <div class="box soft">
+        <div class="tag"><span class="dot orange"></span><b>B 區｜內部價（不對外）</b></div>
+        <table>
+          <thead>
+            <tr>
+              <th>通路</th>
+              <th>成交價</th>
+              <th>單件利潤</th>
+              <th>是否踩線（以 V2 底線判斷）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>V2（底線，不對外）</td><td id="c_v2_p">-</td><td id="c_v2_m">-</td><td id="c_v2_ok">-</td></tr>
+            <tr><td>V1（熟客）</td><td id="c_v1_p">-</td><td id="c_v1_m">-</td><td id="c_v1_ok">-</td></tr>
+            <tr><td>零售（開票，參考）</td><td id="c_r_p">-</td><td id="c_r_m">-</td><td>-</td></tr>
+          </tbody>
+        </table>
+        <div class="foot">零售利潤＝母價/(1+發票稅)−成本；V1/V2 不開票利潤＝成交價−成本。</div>
+      </div>
+
+      <!-- 舊制結果 -->
+      <div class="box compare">
+        <div class="tag"><span class="dot purple"></span><b>舊制母價與利潤（參考，不影響主系統）</b></div>
+
+        <table>
+          <tr><td>舊制單件成本（TWD）</td><td id="c_old_cost">-</td></tr>
+          <tr><td><b>舊制母價（售價 / TWD）</b></td><td id="c_old_mom">-</td></tr>
+        </table>
+
+        <table>
+          <thead>
+            <tr>
+              <th>舊制通路</th>
+              <th>成交價</th>
+              <th>單件利潤</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>舊制 V2 利潤</td><td id="c_old_v2_p">-</td><td id="c_old_v2_m">-</td></tr>
+            <tr><td>舊制 V1 利潤</td><td id="c_old_v1_p">-</td><td id="c_old_v1_m">-</td></tr>
+            <tr><td>舊制 零售利潤（開票口徑）</td><td id="c_old_r_p">-</td><td id="c_old_r_m">-</td></tr>
+          </tbody>
+        </table>
+
+        <div class="hint">
+          舊制利潤（固定10%）：<br>
+          舊制母價＝舊制成本×(1+10%)<br>
+          舊制零售利潤＝母價/(1+發票稅)−舊制成本；舊制 V1/V2 利潤＝(母價×折扣)−舊制成本
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TW ================= -->
+  <section id="tab-tw" class="grid hidden">
+    <div class="card">
+      <h2>輸入（台灣貨 TWD）</h2>
+
+      <div class="row"><label>商品單價（TWD）</label><input id="t_p" type="number" value="380" inputmode="decimal"></div>
+      <div class="row"><label>單件運費（TWD）</label><input id="t_ship" type="number" value="10" inputmode="decimal"></div>
+
+      <div class="row"><label>目標利潤率（%）</label><input id="t_profit" type="number" value="12" inputmode="decimal"></div>
+      <div class="row"><label>零售發票稅（%）</label><input id="t_vat" type="number" value="5" inputmode="decimal"></div>
+      <div class="row"><label>V1 折扣</label><input id="t_v1" type="number" value="0.95" step="0.01" inputmode="decimal"></div>
+      <div class="row"><label>V2 折扣</label><input id="t_v2" type="number" value="0.93" step="0.01" inputmode="decimal"></div>
+
+      <div class="box soft">
+        <div class="secTitle">（選填）手動母價（貼文售價 / TWD）</div>
+        <div class="row"><label>手動母價（TWD）</label><input id="t_manual" type="number" placeholder="留空=系統母價" inputmode="numeric"></div>
+        <div class="hint">取9參考：向上取到10的倍數後減1（例：345 → 349）。</div>
+      </div>
+
+      <div class="box soft">
+        <div class="secTitle">成本摘要（單件）</div>
+        <table>
+          <tr><td>單件成本（TWD）</td><td id="t_unitCost">-</td></tr>
+          <tr><td>目標 V2 底線成交價（=成本×(1+利潤)）</td><td id="t_floorDeal">-</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>結果（台灣貨）</h2>
+
+      <div class="box">
+        <div class="tag"><span class="dot blue"></span><b>A 區｜對外母價（貼文/商品頁）</b></div>
+        <div class="big">NT$ <span id="t_mom">-</span> <small>唯一公開價</small></div>
+        <div class="muted">系統母價（V2 不踩線最低母價）：NT$ <span id="t_mom_min">-</span> ／ 取9參考：NT$ <span id="t_take9">-</span></div>
+        <div id="t_warn" class="warnline hidden">⚠️ 你輸入的手動母價低於 V2 不踩線最低母價，會顯示踩線。</div>
+      </div>
+
+      <div class="box soft">
+        <div class="tag"><span class="dot orange"></span><b>B 區｜內部價（不對外）</b></div>
+        <table>
+          <thead>
+            <tr>
+              <th>通路</th>
+              <th>成交價</th>
+              <th>單件利潤</th>
+              <th>是否踩線（以 V2 底線判斷）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>V2（底線，不對外）</td><td id="t_v2_p">-</td><td id="t_v2_m">-</td><td id="t_v2_ok">-</td></tr>
+            <tr><td>V1（熟客）</td><td id="t_v1_p">-</td><td id="t_v1_m">-</td><td id="t_v1_ok">-</td></tr>
+            <tr><td>零售（開票，參考）</td><td id="t_r_p">-</td><td id="t_r_m">-</td><td>-</td></tr>
+          </tbody>
+        </table>
+        <div class="foot">零售利潤＝母價/(1+發票稅)−成本；V1/V2 不開票利潤＝成交價−成本。</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ====== helpers (手機穩定：所有元素/數字都防呆) ======
+  const $ = (id) => document.getElementById(id);
+  const exists = (id) => !!$(id);
+
+  const num = (v) => {
+    const x = (v === null || v === undefined) ? "" : String(v).trim();
+    if (x === "") return 0;
+    const n = Number(x);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const val = (id) => exists(id) ? num($(id).value) : 0;
+
+  const round = (x) => Math.round(Number.isFinite(x) ? x : 0);
+
+  const setText = (id, text) => {
+    if (!exists(id)) return;
+    $(id).textContent = (text === null || text === undefined) ? "-" : String(text);
+  };
+
+  const setHTML = (id, html) => {
+    if (!exists(id)) return;
+    $(id).innerHTML = html;
+  };
+
+  const setWarn = (id, on) => {
+    if (!exists(id)) return;
+    $(id).classList.toggle("hidden", !on);
+  };
+
+  // 取9參考：向上取到10的倍數後減1
+  const take9 = (x) => {
+    x = Math.max(0, round(x));
+    const up10 = Math.ceil(x / 10) * 10;
+    return up10 - 1;
+  };
+
+  // 核心：由「成本」+「目標利潤」推回「V2不踩線最低母價」
+  function computeByV2Control(unitCost, profitRate, vatRate, v1Disc, v2Disc, manualMom){
+    unitCost = Math.max(0, unitCost);
+    profitRate = Math.max(0, profitRate);
+    vatRate = Math.max(0, vatRate);
+    v1Disc = (v1Disc > 0) ? v1Disc : 0.95;
+    v2Disc = (v2Disc > 0) ? v2Disc : 0.93;
+
+    const floorDeal = unitCost * (1 + profitRate);           // 目標 V2 底線成交價
+    const momMin = (v2Disc > 0) ? (floorDeal / v2Disc) : 0;  // V2不踩線最低母價
+    const sysMomMin = round(momMin);
+
+    const manual = manualMom > 0 ? round(manualMom) : 0;
+    const momUse = manual > 0 ? manual : sysMomMin;
+
+    const v2Price = round(momUse * v2Disc);
+    const v1Price = round(momUse * v1Disc);
+    const retailPrice = round(momUse);
+
+    const v2Profit = round(v2Price - unitCost);
+    const v1Profit = round(v1Price - unitCost);
+    const retailProfit = round((momUse / (1 + vatRate)) - unitCost);
+
+    const v2Ok = (v2Price >= floorDeal) ? true : false;
+    const v1Ok = (v2Ok) ? true : (v2Price >= floorDeal); // 這裡仍以 V2 底線判斷整體踩線（你原版邏輯）
+
+    return {
+      unitCost: round(unitCost),
+      floorDeal: round(floorDeal),
+      sysMomMin,
+      momUse,
+      take9: take9(momUse),
+      v2Price, v1Price, retailPrice,
+      v2Profit, v1Profit, retailProfit,
+      v2Ok, v1Ok,
+      manualLow: (manual > 0 && manual < sysMomMin)
+    };
+  }
+
+  // ====== KR ======
+  function calcKR(){
+    const p = val("k_p");
+    const q = Math.max(1, val("k_q"));
+    const fee = val("k_fee")/100;
+    const w = val("k_w");
+    const ship = val("k_ship");
+    const fx = Math.max(0.000001, val("k_fx"));
+    const df = val("k_df");
+
+    const profit = val("k_profit")/100;
+    const vat = val("k_vat")/100;
+    const v1 = val("k_v1");
+    const v2 = val("k_v2");
+    const manual = val("k_manual");
+
+    // 成本：KRW 轉 TWD + 東風
+    // (商品*q*(1+抽成) + 運費(krw/kg)*重量*q) / 匯率 + 東風(twd/kg)*重量*q，再除以 q
+    let totalTwd = ((p*q*(1+fee) + ship*w*q) / fx) + (df*w*q);
+    let unitCost = totalTwd / q;
+
+    const rsl = computeByV2Control(unitCost, profit, vat, v1, v2, manual);
+
+    setText("k_unitCost", rsl.unitCost);
+    setText("k_floorDeal", rsl.floorDeal);
+
+    setText("k_mom", rsl.momUse);
+    setText("k_mom_min", rsl.sysMomMin);
+    setText("k_take9", rsl.take9);
+
+    setWarn("k_warn", rsl.manualLow);
+
+    setText("k_v2_p", rsl.v2Price);
+    setText("k_v1_p", rsl.v1Price);
+    setText("k_r_p", rsl.retailPrice);
+
+    setText("k_v2_m", rsl.v2Profit);
+    setText("k_v1_m", rsl.v1Profit);
+    setText("k_r_m", rsl.retailProfit);
+
+    setHTML("k_v2_ok", rsl.v2Ok ? "<span class='ok'>OK</span>" : "<span class='bad'>踩線</span>");
+    setHTML("k_v1_ok", rsl.v2Ok ? "<span class='ok'>OK</span>" : "<span class='bad'>踩線</span>");
+  }
+
+  // ====== CN ======
+  function calcCN(){
+    const p = val("c_p");
+    const q = Math.max(1, val("c_q"));
+    const dom = val("c_dom");
+    const fx = val("c_fx");
+    const feePct = val("c_fee")/100;
+    const shipTwdKg = val("c_ship");
+    const w = val("c_w");
+    const duty = val("c_duty")/100;
+
+    const profit = val("c_profit")/100;
+    const vat = val("c_vat")/100;
+    const v1 = val("c_v1");
+    const v2 = val("c_v2");
+    const manual = val("c_manual");
+
+    // 主系統成本
+    const baseTwd = (p*q + dom) * fx;                 // RMB→TWD（商品+境內運）
+    const feeTwd = round(baseTwd * feePct);           // 手續費（四捨五入到整數）
+    const shipTwd = shipTwdKg * w;                    // 國際運（TWD）
+    const beforeDuty = baseTwd + feeTwd + shipTwd;    // 未含稅成本
+    const total = beforeDuty * (1 + duty);            // 含關稅後整批成本
+    const unitCost = total / q;
+
+    setText("c_sum_base", round(baseTwd));
+    setText("c_sum_fee", round(feeTwd));
+    setText("c_sum_ship", round(shipTwd));
+    setText("c_sum_total", round(total));
+
+    const rsl = computeByV2Control(unitCost, profit, vat, v1, v2, manual);
+
+    setText("c_unitCost", rsl.unitCost);
+    setText("c_floorDeal", rsl.floorDeal);
+
+    setText("c_mom", rsl.momUse);
+    setText("c_mom_min", rsl.sysMomMin);
+    setText("c_take9", rsl.take9);
+
+    setWarn("c_warn", rsl.manualLow);
+
+    setText("c_v2_p", rsl.v2Price);
+    setText("c_v1_p", rsl.v1Price);
+    setText("c_r_p", rsl.retailPrice);
+
+    setText("c_v2_m", rsl.v2Profit);
+    setText("c_v1_m", rsl.v1Profit);
+    setText("c_r_m", rsl.retailProfit);
+
+    setHTML("c_v2_ok", rsl.v2Ok ? "<span class='ok'>OK</span>" : "<span class='bad'>踩線</span>");
+    setHTML("c_v1_ok", rsl.v2Ok ? "<span class='ok'>OK</span>" : "<span class='bad'>踩線</span>");
+
+    // ===== 舊制（固定利潤 10%）=====
+    const oldShipRmbKg = val("c_old_ship_rmb"); // 預設 20 RMB/kg，可改
+    const oldFx = val("c_old_fx") || 5;         // 預設 5
+    const oldProfit = 0.10;                     // 固定 10%
+
+    // 舊制單件成本＝((商品×件數)+境內運+(舊制運×重量))×舊制匯率 ÷ 件數
+    const oldTotalTwd = ((p*q) + dom + (oldShipRmbKg * w)) * oldFx;
+    const oldCost = oldTotalTwd / q;
+
+    // 舊制母價＝舊制成本×(1+10%)
+    const oldMom = oldCost * (1 + oldProfit);
+
+    // 舊制成交價
+    const oldV2P = oldMom * (v2 > 0 ? v2 : 0.93);
+    const oldV1P = oldMom * (v1 > 0 ? v1 : 0.95);
+    const oldRP  = oldMom;
+
+    // 舊制利潤
+    // 零售＝母價/(1+發票稅)−舊制成本；V1/V2＝(母價×折扣)−舊制成本
+    const oldV2M = oldV2P - oldCost;
+    const oldV1M = oldV1P - oldCost;
+    const oldRM  = (oldMom / (1 + vat)) - oldCost;
+
+    setText("c_old_cost", round(oldCost));
+    setText("c_old_mom", round(oldMom));
+
+    setText("c_old_v2_p", round(oldV2P));
+    setText("c_old_v2_m", round(oldV2M));
+
+    setText("c_old_v1_p", round(oldV1P));
+    setText("c_old_v1_m", round(oldV1M));
+
+    setText("c_old_r_p", round(oldRP));
+    setText("c_old_r_m", round(oldRM));
+  }
+
+  // ====== TW ======
+  function calcTW(){
+    const p = val("t_p");
+    const ship = val("t_ship");
+    const unitCost = p + ship;
+
+    const profit = val("t_profit")/100;
+    const vat = val("t_vat")/100;
+    const v1 = val("t_v1");
+    const v2 = val("t_v2");
+    const manual = val("t_manual");
+
+    const rsl = computeByV2Control(unitCost, profit, vat, v1, v2, manual);
+
+    setText("t_unitCost", rsl.unitCost);
+    setText("t_floorDeal", rsl.floorDeal);
+
+    setText("t_mom", rsl.momUse);
+    setText("t_mom_min", rsl.sysMomMin);
+    setText("t_take9", rsl.take9);
+
+    setWarn("t_warn", rsl.manualLow);
+
+    setText("t_v2_p", rsl.v2Price);
+    setText("t_v1_p", rsl.v1Price);
+    setText("t_r_p", rsl.retailPrice);
+
+    setText("t_v2_m", rsl.v2Profit);
+    setText("t_v1_m", rsl.v1Profit);
+    setText("t_r_m", rsl.retailProfit);
+
+    setHTML("t_v2_ok", rsl.v2Ok ? "<span class='ok'>OK</span>" : "<span class='bad'>踩線</span>");
+    setHTML("t_v1_ok", rsl.v2Ok ? "<span class='ok'>OK</span>" : "<span class='bad'>踩線</span>");
+  }
+
+  function calcAll(){
+    // 任何一個計算出錯都不要讓整頁掛掉（手機穩定核心）
+    try{ calcKR(); }catch(e){ /* ignore */ }
+    try{ calcCN(); }catch(e){ /* ignore */ }
+    try{ calcTW(); }catch(e){ /* ignore */ }
+  }
+
+  // ====== Tab 切換（手機穩定版） ======
+  function setActive(tabKey){
+    const keys = ["kr","cn","tw"];
+    keys.forEach(k=>{
+      const sec = $("tab-"+k);
+      if (sec) sec.classList.toggle("hidden", k !== tabKey);
+    });
+    document.querySelectorAll(".tabbtn").forEach(btn=>{
+      btn.classList.toggle("active", btn.dataset.tab === tabKey);
+    });
+  }
+
+  function bind(){
+    // tab 按鈕
+    document.querySelectorAll(".tabbtn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        setActive(btn.dataset.tab);
+      }, {passive:true});
+      // iOS/部分安卓會需要 touchstart 更穩
+      btn.addEventListener("touchstart", ()=>{
+        setActive(btn.dataset.tab);
+      }, {passive:true});
+    });
+
+    // 監聽所有 input change
+    document.querySelectorAll("input,select").forEach(el=>{
+      el.addEventListener("input", calcAll, {passive:true});
+      el.addEventListener("change", calcAll, {passive:true});
+    });
+
+    // 預設在韓貨
+    setActive("kr");
+    calcAll();
+  }
+
+  if (document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", bind);
+  }else{
+    bind();
+  }
+})();
+</script>
+
+</body>
+</html>
